@@ -1,16 +1,31 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/authentication/Login';
 import Register from './pages/authentication/Register';
+import Dashboard from './pages/Dashboard';
+import ProtectedRoute from './components/ProtectedRoute';
+import './App.css';
+import { useAuth } from './context/AuthContext';
 
 function App() {
+
+  const { token } = useAuth();
+
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        <Route path="/login" element={token ? <Navigate to="/" /> : <Login />} />
+        <Route path="/register" element={token ? <Navigate to="/" /> : <Register />} />
         
+        <Route 
+          path="/" 
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } 
+        />
         
-        <Route path="*" element={<Login />} /> 
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </BrowserRouter>
   );

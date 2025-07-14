@@ -9,6 +9,7 @@ export const AuthProvider = ({ children }) => {
     () => localStorage.getItem("token") || null
   );
   const [errors, setErrors] = useState(null);
+  const [tasks, setTasks] = useState([]);
 
   const login = async (email, password) => {
     try {
@@ -44,8 +45,60 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const logout = () => {
+    api.post('/logout').then(() => {
+        setUser(null);
+        setToken(null);
+        localStorage.removeItem('token');
+    });
+  };
+
+  const getTasks = async (filters = {}) => {
+    try {
+      const response = await api.get('/mytasks', { params: filters });
+      setTasks(response.data.data); 
+    } catch (error) {
+      console.error("Failed to fetch tasks", error);
+    }
+  };
+
+  const createTask = async (taskData) => {
+    try {
+      await api.post('/task', taskData);
+      await getTasks();
+    } catch (error) {
+      console.error("Failed to create task", error);
+    }
+  };
+
+  const updateTask = async (taskId, taskData) => {
+    try {
+      const formData = new FormData();
+      Object.keys(taskData).forEach(key => formData.append(key, taskData[key]));
+      formData.append('_method', 'PUT');
+
+      await api.post(`/task/${taskId}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      await getTasks();
+    } catch (error) {
+      console.error("Failed to update task", error);
+    }
+  };
+
+  const deleteTask = async (taskId) => {
+    if (window.confirm('¿Estás seguro de que quieres eliminar esta tarea?')) {
+      try {
+        await api.delete(`/task/${taskId}`);
+        await getTasks();
+      } catch (error) {
+        console.error("Failed to delete task", error);
+      }
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, errors, login, register }}>
+    <AuthContext.Provider value={{ user, token, errors, login, register, logout, tasks, getTasks, createTask, updateTask, deleteTask }}>
       {children}
     </AuthContext.Provider>
   );

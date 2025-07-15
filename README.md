@@ -61,11 +61,11 @@ npm run dev
 Abre http://localhost:5173 (o el puerto que indique la terminal) en tu navegador para ver la aplicación.
 
 ## Funcionalidades
-✅ Autenticación de usuarios (Registro e Inicio de Sesión).
-✅ Gestión completa de tareas (Crear, Editar, Eliminar).
-✅ Dashboard protegido para usuarios autenticados.
-✅ Filtrado de tareas por título y estado.
-✅ Subida de archivos adjuntos a las tareas.
-✅ Configuración de recordatorios.
-✅ Interfaz para descargar y restaurar backups en XML.
-✅ Paginación para la lista de tareas.
+*✅ Autenticación de usuarios (Registro e Inicio de Sesión).
+*✅ Gestión completa de tareas (Crear, Editar, Eliminar).
+*✅ Dashboard protegido para usuarios autenticados.
+*✅ Filtrado de tareas por título y estado.
+*✅ Subida de archivos adjuntos a las tareas.
+*✅ Configuración de recordatorios.
+*✅ Interfaz para descargar y restaurar backups en XML.
+*✅ Paginación para la lista de tareas.

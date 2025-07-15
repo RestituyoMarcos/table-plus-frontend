@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 import { useAuth } from './context/AuthContext';
+import BackupPage from './pages/Backup/BackupPage';
 
 function App() {
 
@@ -23,6 +24,15 @@ function App() {
               <Dashboard />
             </ProtectedRoute>
           } 
+        />
+
+        <Route 
+          path="/backup"
+          element={
+            <ProtectedRoute>
+              <BackupPage />
+            </ProtectedRoute>
+          }
         />
         
         <Route path="*" element={<Navigate to="/" />} />

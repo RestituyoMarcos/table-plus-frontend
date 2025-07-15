@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import TaskFormModal from "../components/TaskFormModal";
+import { Link } from "react-router-dom";
+import Pagination from "../components/Pagination";
 
 export default function Dashboard() {
-  const { user, logout, tasks, getTasks, createTask, updateTask, deleteTask } =
-    useAuth();
+  const { user, logout, tasks, getTasks, createTask, updateTask, deleteTask,
+    errors, clearErrors } = useAuth();
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [titleFilter, setTitleFilter] = useState("");
@@ -27,15 +30,23 @@ export default function Dashboard() {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingTask(null);
+    clearErrors();
   };
 
   const handleFormSubmit = async (formData) => {
+    let success;
     if (editingTask) {
-      await updateTask(editingTask.id, formData);
+      success = await updateTask(editingTask.id, formData);
     } else {
-      await createTask(formData);
+      success = await createTask(formData);
     }
-    handleCloseModal();
+    if (success) {
+      handleCloseModal();
+    }
+  };
+
+  const handlePageChange = (pageNumber) => {
+    getTasks({ ...{ page: pageNumber, title: titleFilter, status: statusFilter } });
   };
 
   return (
@@ -45,6 +56,14 @@ export default function Dashboard() {
           <div className="flex justify-between items-center h-16">
             <div className="flex-shrink-0 text-xl font-bold text-indigo-600">
               Table Plus
+            </div>
+            <div className="flex items-center">
+              <Link to="/" className="text-gray-800 hover:text-gray-600 mr-4">
+                Dashboard
+              </Link>
+              <Link to="/backup" className="text-gray-800 hover:text-gray-600 mr-4">
+                Backup
+              </Link>
             </div>
             <div className="flex items-center">
               <span className="text-gray-800 mr-4">
@@ -124,12 +143,12 @@ export default function Dashboard() {
         <div className="mt-6">
           <div className="bg-white shadow overflow-hidden sm:rounded-lg">
             <ul className="divide-y divide-gray-200">
-              {tasks.length > 0 ? (
-                tasks.map((task) => (
+              {tasks.data && tasks.data.length > 0 ? (
+                tasks.data.map((task) => (
                   <li key={task.id} className="px-4 py-4 sm:px-6">
                     <div className="flex items-center justify-between">
                       <div className="truncate">
-                        <p className="font-medium text-indigo-600 truncate">
+                        <p className="font-medium text-indigo-600 truncate text-left">
                           {task.title}
                         </p>
                         <p className="text-sm text-gray-500">
@@ -160,6 +179,18 @@ export default function Dashboard() {
                             minute: "2-digit",
                           }).format(new Date(task.due_date))}
                         </p>
+                        {task.attachment_path && (
+                          <p className="mt-2 flex items-center text-sm text-white sm:mt-0 sm:ml-6">
+                            <a
+                              href={`http://127.0.0.1:8000/storage/${task.attachment_path}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-white! hover:border-white bg-indigo-600 rounded-xl px-2 py-1"
+                            >
+                              Ver Adjunto
+                            </a>
+                          </p>
+                        )}
                       </div>
                       <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
                         <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0 space-x-2">
@@ -188,6 +219,9 @@ export default function Dashboard() {
             </ul>
           </div>
         </div>
+        {tasks.data && tasks.data.length > 0 && (
+          <Pagination links={tasks.links} onPageChange={handlePageChange} />
+        )}
       </main>
 
       <TaskFormModal
@@ -195,6 +229,7 @@ export default function Dashboard() {
         onClose={handleCloseModal}
         onSubmit={handleFormSubmit}
         task={editingTask}
+        errors={errors}
       />
     </div>
   );

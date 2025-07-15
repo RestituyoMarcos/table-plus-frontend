@@ -4,12 +4,20 @@ import api from "../services/api";
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem('user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
+
   const [token, setToken] = useState(
     () => localStorage.getItem("token") || null
   );
   const [errors, setErrors] = useState(null);
-  const [tasks, setTasks] = useState([]);
+  const [tasks, setTasks] = useState({ data: [], links: [], meta: {} });
+
+  const clearErrors = () => {
+    setErrors(null);
+  };
 
   const login = async (email, password) => {
     try {
@@ -19,6 +27,8 @@ export const AuthProvider = ({ children }) => {
 
       setUser(user);
       setToken(access_token);
+
+      localStorage.setItem('user', JSON.stringify(user));
       localStorage.setItem("token", access_token);
       setErrors(null);
     } catch (error) {
@@ -38,6 +48,8 @@ export const AuthProvider = ({ children }) => {
 
       setUser(user);
       setToken(access_token);
+
+      localStorage.setItem('user', JSON.stringify(user));
       localStorage.setItem("token", access_token);
       setErrors(null);
     } catch (error) {
@@ -49,6 +61,7 @@ export const AuthProvider = ({ children }) => {
     api.post('/logout').then(() => {
         setUser(null);
         setToken(null);
+        localStorage.removeItem('user');
         localStorage.removeItem('token');
     });
   };
@@ -56,7 +69,7 @@ export const AuthProvider = ({ children }) => {
   const getTasks = async (filters = {}) => {
     try {
       const response = await api.get('/mytasks', { params: filters });
-      setTasks(response.data.data); 
+      setTasks(response.data); 
     } catch (error) {
       console.error("Failed to fetch tasks", error);
     }
@@ -64,25 +77,39 @@ export const AuthProvider = ({ children }) => {
 
   const createTask = async (taskData) => {
     try {
-      await api.post('/task', taskData);
+      await api.post('/task', taskData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
       await getTasks();
+      setErrors(null);
+      return true;
     } catch (error) {
-      console.error("Failed to create task", error);
+      if (error.response && error.response.status === 422) {
+        setErrors(error.response.data.errors);
+      } else {
+        console.error("Error al crear la tarea:", error);
+      }
+      return false;
     }
   };
 
   const updateTask = async (taskId, taskData) => {
     try {
-      const formData = new FormData();
-      Object.keys(taskData).forEach(key => formData.append(key, taskData[key]));
-      formData.append('_method', 'PUT');
+      taskData.append('_method', 'PUT');
 
-      await api.post(`/task/${taskId}`, formData, {
+      await api.post(`/task/${taskId}`, taskData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       await getTasks();
+      setErrors(null);
+      return true;
     } catch (error) {
-      console.error("Failed to update task", error);
+      if (error.response && error.response.status === 422) {
+        setErrors(error.response.data.errors);
+      } else {
+        console.error("Error al actualizar la tarea: ", error);
+      }
+      return false;
     }
   };
 
@@ -97,8 +124,44 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const createBackup = async () => {
+    try {
+      const response = await api.get('/backup/create', {
+        responseType: 'blob',
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      const fileName = 'backup-tasks-' + new Date().toISOString().slice(0, 10) + '.xml';
+      link.setAttribute('download', fileName);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+    } catch (error) {
+      console.error("Failed to create backup", error);
+    }
+  };
+
+  const restoreBackup = async (file) => {
+    const formData = new FormData();
+    formData.append('backup_file', file);
+    
+    try {
+      await api.post('/backup/restore', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      await getTasks();
+      return true;
+    } catch (error) {
+      console.error("Failed to restore backup", error);
+      return false;
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, errors, login, register, logout, tasks, getTasks, createTask, updateTask, deleteTask }}>
+    <AuthContext.Provider value={{ user, token, errors, clearErrors, login, register, logout, tasks, getTasks, createTask, updateTask, deleteTask, createBackup, restoreBackup }}>
       {children}
     </AuthContext.Provider>
   );

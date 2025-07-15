@@ -32,7 +32,7 @@ Asegúrate de tener instalado Node.js y npm en tu sistema.
 
 1.  **Clona el repositorio**
     ```sh
-    git clone [https://github.com/tu-usuario/table-plus-frontend.git](https://github.com/tu-usuario/table-plus-frontend.git)
+    git clone [https://github.com/RestituyoMarcos/table-plus-frontend.git](https://github.com/RestituyoMarcos/table-plus-frontend.git)
     ```
 2.  **Navega al directorio del proyecto**
     ```sh
